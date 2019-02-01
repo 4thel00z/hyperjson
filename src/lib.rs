@@ -14,11 +14,14 @@ use std::fmt;
 use std::marker::PhantomData;
 
 use pyo3::prelude::*;
+use pyo3::exceptions::Exception;
 use pyo3::types::exceptions::TypeError as PyTypeError;
 use pyo3::types::exceptions::ValueError as PyValueError;
 use pyo3::types::{PyDict, PyFloat, PyList, PyObjectRef, PyTuple};
 use serde::de::{self, DeserializeSeed, Deserializer, MapAccess, SeqAccess, Visitor};
 use serde::ser::{self, Serialize, SerializeMap, SerializeSeq, Serializer};
+
+create_exception!(hyperjson, JSONDecodeError, Exception);
 
 #[derive(Debug, Fail)]
 pub enum HyperJsonError {
@@ -70,8 +73,6 @@ impl From<PyErr> for HyperJsonError {
         }
     }
 }
-
-import_exception!(json, JSONDecodeError);
 
 #[pyfunction]
 pub fn load(py: Python, fp: PyObject, kwargs: Option<&PyDict>) -> PyResult<PyObject> {
@@ -211,9 +212,9 @@ fn hyperjson(_py: Python, m: &PyModule) -> PyResult<()> {
     // See https://github.com/PyO3/pyo3/issues/171
     // Use JSONDecodeError from stdlib until issue is resolved.
     // py_exception!(_hyperjson, JSONDecodeError);
-    // m.add("JSONDecodeError", py.get_type::<JSONDecodeError>());
-
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
+
+    m.add("JSONDecodeError", _py.get_type::<JSONDecodeError>())?;
 
     m.add_wrapped(wrap_pyfunction!(load))?;
     m.add_wrapped(wrap_pyfunction!(loads))?;
